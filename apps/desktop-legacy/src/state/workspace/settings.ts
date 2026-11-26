@@ -202,4 +202,3 @@ export function countWords(text: string): number {
 	return trimmed.split(/\s+/).filter((w) => w.length > 0).length
 }
 
-
