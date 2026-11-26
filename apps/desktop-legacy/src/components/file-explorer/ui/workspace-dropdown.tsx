@@ -14,7 +14,8 @@ import {
 import { getFolderNameFromPath } from "@mdit/utils/path-utils"
 import { ChevronDown, InboxIcon, MinusIcon } from "lucide-react"
 import { HotkeyKbd } from "@/components/hotkeys/hotkey-kbd"
-import { useHotkeysState } from "@/state"
+import { useDesktopRuntime, useHotkeysState, useWorkspaceState } from "@/state"
+import { EntryIcon } from "./entry-icon"
 
 const REMOVE_WORKSPACE_SELECTOR = '[data-remove-workspace="true"]'
 
@@ -37,6 +38,19 @@ type WorkspaceDropdownProps = {
 	onOpenFolderPicker: () => void
 }
 
+const VAULT_ICON_CHOICES = [
+	"Inbox",
+	"Library",
+	"BookOpen",
+	"Notebook",
+	"Brain",
+	"Sparkles",
+	"FolderKanban",
+	"Layers",
+	"Archive",
+	"Home",
+] as const
+
 export function WorkspaceDropdown({
 	workspacePath,
 	recentWorkspacePaths,
@@ -45,6 +59,8 @@ export function WorkspaceDropdown({
 	onOpenFolderPicker,
 }: WorkspaceDropdownProps) {
 	const openFolderHotkey = useHotkeysState((s) => s.hotkeys["open-folder"])
+	const vaultIcon = useWorkspaceState((s) => s.vaultIcon)
+	const setVaultIcon = useDesktopRuntime().workspace.commands.setVaultIcon
 	const currentWorkspaceName = workspacePath
 		? getFolderNameFromPath(workspacePath)
 		: "No folder"
@@ -60,7 +76,7 @@ export function WorkspaceDropdown({
 					size="sm"
 					className="text-foreground/90 tracking-tight min-w-0 flex-1 px-1.5! h-8 hover:bg-background/40"
 				>
-					<InboxIcon className="size-4" />
+					<EntryIcon name={vaultIcon ?? "Inbox"} className="size-4" />
 					<span className="flex-1 text-start text-sm text-overflow-mask">
 						{currentWorkspaceName}
 					</span>
@@ -137,6 +153,31 @@ export function WorkspaceDropdown({
 					</span>
 					<HotkeyKbd binding={openFolderHotkey} />
 				</DropdownMenuItem>
+				{workspacePath ? (
+					<>
+						<DropdownMenuSeparator />
+						<div className="px-2 py-1.5 text-xs text-muted-foreground">
+							Vault icon
+						</div>
+						<div className="grid grid-cols-5 gap-1 px-2 pb-2">
+							{VAULT_ICON_CHOICES.map((name) => (
+								<button
+									key={name}
+									type="button"
+									title={name}
+									className={`flex size-8 items-center justify-center rounded-md hover:bg-accent ${
+										vaultIcon === name ? "bg-accent ring-1 ring-ring" : ""
+									}`}
+									onClick={() => {
+										void setVaultIcon(vaultIcon === name ? null : name)
+									}}
+								>
+									<EntryIcon name={name} className="size-4" />
+								</button>
+							))}
+						</div>
+					</>
+				) : null}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	)
