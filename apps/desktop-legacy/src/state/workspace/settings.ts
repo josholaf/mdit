@@ -167,7 +167,7 @@ export function storeEntryIcons(
 	const result: Record<string, string> = {}
 	for (const [absolute, iconName] of Object.entries(icons)) {
 		if (!iconName?.trim()) continue
-		result[relative(workspacePath, absolute) || "."] = iconName.trim()
+		result[relative(workspacePath, absolute) || "." ] = iconName.trim()
 	}
 	return result
 }
@@ -201,3 +201,5 @@ export function countWords(text: string): number {
 	if (!trimmed) return 0
 	return trimmed.split(/\s+/).filter((w) => w.length > 0).length
 }
+
+
