@@ -38,6 +38,8 @@ import {
 import { createTauriWorkspaceWatcher } from "./workspace/watch-tauri"
 
 const OPEN_WORKSPACE_PICKER = "open-workspace-picker"
+/** Path -> last known word count (for daily writing deltas) */
+const lastWordCounts = new Map<string, number>()
 
 export function createDesktopRuntime(mode: "workspace" | "detached") {
 	const preferences = createWindowState(new UserSettingsRepository(), mode)
@@ -76,8 +78,22 @@ export function createDesktopRuntime(mode: "workspace" | "detached") {
 				[oldPath, newPath],
 				[...workspace.getSnapshot().aiLockedEntryPaths],
 			),
-		onSaved: (path) => {
+		onSaved: async (path) => {
 			workspace.commands.registerLocalMutation([{ path, scope: "exact" }])
+			try {
+				if (!path.toLowerCase().endsWith(".md")) return
+				const { countWords } = await import("./workspace/settings")
+				const text = await fileSystem.readTextFile(path)
+				const words = countWords(text)
+				const prev = lastWordCounts.get(path) ?? 0
+				const delta = words - prev
+				lastWordCounts.set(path, words)
+				if (delta > 0) {
+					await workspace.commands.recordWritingWords(delta)
+				}
+			} catch {
+				// activity tracking is best-effort
+			}
 		},
 		onRenamed: (from, to) =>
 			workspace.commands.reconcileSavedDocumentRename(from, to),
