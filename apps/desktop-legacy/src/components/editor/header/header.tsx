@@ -1,5 +1,6 @@
 import { cn } from "@mdit/ui/lib/utils"
 import { useShallow } from "zustand/shallow"
+import { CalendarToggleButton } from "@/components/calendar/writing-heatmap-panel"
 import { WindowPinButton } from "@/components/quick-note/window-pin-button"
 import { useCurrentWindowLabel } from "@/hooks/use-current-window-label"
 import { useIsFullscreen } from "@/hooks/use-is-fullscreen"
@@ -55,6 +56,7 @@ export function Header({
 			{showEditorNavigation && <TabStrip />}
 			<div className="flex items-center gap-0.5 ml-auto">
 				{showPin && <WindowPinButton />}
+				{workspacePath && <CalendarToggleButton />}
 				{showInfoButton && <InfoButton />}
 			</div>
 		</div>
