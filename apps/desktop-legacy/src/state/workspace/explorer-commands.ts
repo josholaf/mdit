@@ -129,10 +129,15 @@ export function createWorkspaceExplorerCommands({
 		})
 	}
 
-	const recordWritingWords = async (words: number, path?: string) => {
+	const recordWritingWords = async (words: number, path: string) => {
 		const previous = getSnapshot()
 		const { workspacePath } = previous
-		if (!workspacePath || words <= 0) {
+		const normalized = normalizePathSeparators(path)
+		if (
+			!workspacePath ||
+			words <= 0 ||
+			!isPathEqualOrDescendant(normalized, workspacePath)
+		) {
 			return
 		}
 		const day = todayKey()
@@ -142,12 +147,7 @@ export function createWorkspaceExplorerCommands({
 		}
 		state.update({
 			writingActivity,
-			writingEntries: path
-				? {
-						...previous.writingEntries,
-						[normalizePathSeparators(path)]: day,
-					}
-				: previous.writingEntries,
+			writingEntries: { ...previous.writingEntries, [normalized]: day },
 		})
 		await persistDirectoryUi(workspacePath, previous, {
 			...previous,
