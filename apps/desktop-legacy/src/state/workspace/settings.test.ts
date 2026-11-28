@@ -1,10 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
 import {
+	countWords,
 	createWorkspaceSettingsRepository,
 	readDirectorySettings,
 	readEntryIconSettings,
 	readOpenedFileSettings,
+	readVaultIconSetting,
+	readWritingActivity,
 	storeEntryIconSettings,
+	todayKey,
 } from "./settings"
 
 describe("workspace settings", () => {
@@ -129,5 +133,36 @@ describe("workspace settings", () => {
 			inbox: "inbox",
 		})
 		expect(readEntryIconSettings("/vault", ["notes"])).toEqual({})
+	})
+
+	it("keeps only valid writing activity days", () => {
+		expect(
+			readWritingActivity({
+				"2026-11-27": 120.7,
+				"2026-11-28": -3,
+				"2026-1-1": 10,
+				"2026-11-29": Number.POSITIVE_INFINITY,
+				"2026-11-30": "12",
+			}),
+		).toEqual({ "2026-11-27": 120 })
+		expect(readWritingActivity(null)).toEqual({})
+		expect(readWritingActivity([1])).toEqual({})
+	})
+
+	it("reads vault icons and formats day keys", () => {
+		expect(readVaultIconSetting(" brain ")).toBe("brain")
+		expect(readVaultIconSetting("  ")).toBeNull()
+		expect(readVaultIconSetting(3)).toBeNull()
+		expect(todayKey(new Date(2026, 0, 5))).toBe("2026-01-05")
+	})
+
+	it("counts words separated by whitespace", () => {
+		expect(countWords("")).toBe(0)
+		expect(countWords("  # Title\n\nsome  words here ")).toBe(4)
+		expect(countWords("- one\n- two\n\n---\n\n> three")).toBe(3)
+		expect(countWords("---\ntags: [a, b]\n---\nBody text")).toBe(
+			countWords("---\ntags:\n  - a\n  - b\n---\nBody text"),
+		)
+		expect(countWords("---\ntitle: x\n---\nBody text")).toBe(2)
 	})
 })

@@ -169,3 +169,43 @@ export function readOpenedFileSettings(
 		.map((path) => resolve(workspacePath, path))
 		.filter((path) => isPathEqualOrDescendant(path, workspacePath))
 }
+
+export function readVaultIconSetting(icon: unknown): string | null {
+	return typeof icon === "string" && icon.trim() ? icon.trim() : null
+}
+
+export function readWritingActivity(raw: unknown): Record<string, number> {
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {}
+	const result: Record<string, number> = {}
+	for (const [day, count] of Object.entries(raw)) {
+		if (
+			typeof day === "string" &&
+			/^\d{4}-\d{2}-\d{2}$/.test(day) &&
+			typeof count === "number" &&
+			Number.isFinite(count) &&
+			count >= 0
+		) {
+			result[day] = Math.floor(count)
+		}
+	}
+	return result
+}
+
+export function todayKey(date = new Date()): string {
+	const y = date.getFullYear()
+	const m = String(date.getMonth() + 1).padStart(2, "0")
+	const d = String(date.getDate()).padStart(2, "0")
+	return `${y}-${m}-${d}`
+}
+
+const FRONTMATTER =
+	/^\uFEFF?---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/
+const WORD_CHARACTER = /[\p{L}\p{N}]/u
+
+/** Counts body words; ignores frontmatter and pure Markdown syntax tokens. */
+export function countWords(text: string): number {
+	return text
+		.replace(FRONTMATTER, "")
+		.split(/\s+/)
+		.filter((token) => WORD_CHARACTER.test(token)).length
+}

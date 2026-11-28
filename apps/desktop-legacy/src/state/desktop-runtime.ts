@@ -35,6 +35,7 @@ import {
 	createWorkspaceRuntime,
 	createWorkspaceSettingsRepository,
 } from "./workspace"
+import { countWords } from "./workspace/settings"
 import { createTauriWorkspaceWatcher } from "./workspace/watch-tauri"
 
 const OPEN_WORKSPACE_PICKER = "open-workspace-picker"
@@ -76,8 +77,15 @@ export function createDesktopRuntime(mode: "workspace" | "detached") {
 				[oldPath, newPath],
 				[...workspace.getSnapshot().aiLockedEntryPaths],
 			),
-		onSaved: (path) => {
+		onSaved: (path, { previousContent, content }) => {
 			workspace.commands.registerLocalMutation([{ path, scope: "exact" }])
+			if (!path.toLowerCase().endsWith(".md")) {
+				return
+			}
+			const wordsAdded = countWords(content) - countWords(previousContent)
+			if (wordsAdded > 0) {
+				void workspace.commands.recordWritingWords(wordsAdded, path)
+			}
 		},
 		onRenamed: (from, to) =>
 			workspace.commands.reconcileSavedDocumentRename(from, to),

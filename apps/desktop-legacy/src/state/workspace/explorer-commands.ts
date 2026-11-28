@@ -4,6 +4,7 @@ import {
 	normalizePathSeparators,
 } from "@mdit/utils/path-utils"
 import type { createState } from "../create-state"
+import { todayKey } from "./settings"
 import type { createWorkspaceTreeProjection } from "./tree-projection"
 import type {
 	WorkspaceEntry,
@@ -115,6 +116,45 @@ export function createWorkspaceExplorerCommands({
 		await persistDirectoryUi(workspacePath, previous, next)
 	}
 
+	const setVaultIcon = async (icon: string | null) => {
+		const previous = getSnapshot()
+		const { workspacePath } = previous
+		if (!workspacePath || previous.vaultIcon === icon) {
+			return
+		}
+		state.update({ vaultIcon: icon })
+		await persistDirectoryUi(workspacePath, previous, {
+			...previous,
+			vaultIcon: icon,
+		})
+	}
+
+	const recordWritingWords = async (words: number, path: string) => {
+		const previous = getSnapshot()
+		const { workspacePath } = previous
+		const normalized = normalizePathSeparators(path)
+		if (
+			!workspacePath ||
+			words <= 0 ||
+			!isPathEqualOrDescendant(normalized, workspacePath)
+		) {
+			return
+		}
+		const day = todayKey()
+		const writingActivity = {
+			...previous.writingActivity,
+			[day]: (previous.writingActivity[day] ?? 0) + Math.floor(words),
+		}
+		state.update({
+			writingActivity,
+			writingEntries: { ...previous.writingEntries, [normalized]: day },
+		})
+		await persistDirectoryUi(workspacePath, previous, {
+			...previous,
+			writingActivity,
+		})
+	}
+
 	const setCurrentCollectionPath = (
 		value: string | null | ((previous: string | null) => string | null),
 	) => {
@@ -154,6 +194,8 @@ export function createWorkspaceExplorerCommands({
 			)
 		},
 		setEntryIcon,
+		setVaultIcon,
+		recordWritingWords,
 		pinDirectory: (path: string) => updatePinnedDirectories(path, true),
 		unpinDirectory: (path: string) => updatePinnedDirectories(path, false),
 		setCurrentCollectionPath,

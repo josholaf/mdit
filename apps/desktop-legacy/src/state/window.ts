@@ -38,6 +38,7 @@ export function createWindowState(
 		fontScale: preferences.getFontScale(),
 		chatPanelBetaEnabled: preferences.getChatPanelBetaEnabled(),
 		isChatPanelOpen: false,
+		isCalendarPanelOpen: false,
 		isFocusMode: false,
 	})
 	let typingCount = 0
@@ -64,6 +65,10 @@ export function createWindowState(
 		state.update({
 			isChatPanelOpen: open && state.getSnapshot().chatPanelBetaEnabled,
 		})
+	}
+
+	const setCalendarPanelOpen = (open: boolean) => {
+		state.update({ isCalendarPanelOpen: open })
 	}
 
 	return {
@@ -141,6 +146,9 @@ export function createWindowState(
 			setChatPanelOpen,
 			toggleChatPanelOpen: () =>
 				setChatPanelOpen(!state.getSnapshot().isChatPanelOpen),
+			setCalendarPanelOpen,
+			toggleCalendarPanelOpen: () =>
+				setCalendarPanelOpen(!state.getSnapshot().isCalendarPanelOpen),
 			handleTypingProgress: () => {
 				if (state.getSnapshot().isFocusMode) return
 				typingCount++

@@ -46,6 +46,10 @@ vi.mock("@/components/quick-note/window-pin-button", () => ({
 	WindowPinButton: () => <div data-testid="window-pin-button" />,
 }))
 
+vi.mock("@/components/calendar/writing-heatmap-panel", () => ({
+	CalendarToggleButton: () => <div data-testid="calendar-toggle-button" />,
+}))
+
 describe("Header", () => {
 	it("keeps history navigation visible without tabs but hides the info button", () => {
 		mockSelector.mockImplementation((selector) =>

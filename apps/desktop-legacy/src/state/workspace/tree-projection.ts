@@ -20,6 +20,8 @@ import { readWorkspaceEntriesFromPath } from "./filesystem"
 import {
 	readDirectorySettings,
 	readEntryIconSettings,
+	readVaultIconSetting,
+	readWritingActivity,
 	storeDirectorySettings,
 	storeEntryIconSettings,
 	type WorkspaceSettingsRepository,
@@ -36,7 +38,7 @@ type DirectoryUi = Pick<
 	WorkspaceState,
 	"expandedDirectories" | "pinnedDirectories"
 > &
-	Partial<Pick<WorkspaceState, "entryIcons">>
+	Partial<Pick<WorkspaceState, "entryIcons" | "vaultIcon" | "writingActivity">>
 
 type EntryCreated = {
 	parentPath: string
@@ -56,9 +58,9 @@ const remapOptionalPath = (
 	newPath: string,
 ) => (path === null ? null : remapPath(path, oldPath, newPath))
 
-const areEntryIconsEqual = (
-	previous: Record<string, string>,
-	next: Record<string, string>,
+const areRecordsEqual = <T>(
+	previous: Record<string, T>,
+	next: Record<string, T>,
 ) => {
 	const keys = Object.keys(next)
 	return (
@@ -149,9 +151,19 @@ export function createWorkspaceTreeProjection({
 		if (
 			previous.entryIcons &&
 			next.entryIcons &&
-			!areEntryIconsEqual(previous.entryIcons, next.entryIcons)
+			!areRecordsEqual(previous.entryIcons, next.entryIcons)
 		) {
 			patch.entryIcons = storeEntryIconSettings(workspacePath, next.entryIcons)
+		}
+		if (next.vaultIcon !== undefined && previous.vaultIcon !== next.vaultIcon) {
+			patch.vaultIcon = next.vaultIcon
+		}
+		if (
+			previous.writingActivity &&
+			next.writingActivity &&
+			!areRecordsEqual(previous.writingActivity, next.writingActivity)
+		) {
+			patch.writingActivity = next.writingActivity
 		}
 		if (Object.keys(patch).length > 0) {
 			try {
@@ -185,6 +197,8 @@ export function createWorkspaceTreeProjection({
 						workspacePath,
 						loadedSettings.entryIcons,
 					),
+					vaultIcon: readVaultIconSetting(loadedSettings.vaultIcon),
+					writingActivity: readWritingActivity(loadedSettings.writingActivity),
 				}
 			: previous
 		const validDirectories = new Set<string>()
@@ -200,6 +214,8 @@ export function createWorkspaceTreeProjection({
 					validDirectories.has(path),
 			),
 			entryIcons: storedDirectories.entryIcons,
+			vaultIcon: storedDirectories.vaultIcon,
+			writingActivity: storedDirectories.writingActivity,
 		}
 		state.update(next)
 		await persistDirectoryUi(workspacePath, storedDirectories, next)

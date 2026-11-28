@@ -23,6 +23,11 @@ export type WorkspaceState = {
 	isMigrationsComplete: boolean
 	pinnedDirectories: string[]
 	entryIcons: Record<string, string>
+	vaultIcon: string | null
+	/** YYYY-MM-DD -> words written that day */
+	writingActivity: Record<string, number>
+	/** Path -> YYYY-MM-DD of the last save that added words (not persisted) */
+	writingEntries: Record<string, string>
 	aiLockedEntryPaths: Set<string>
 	selectedEntryPaths: Set<string>
 	selectionAnchorPath: string | null
@@ -38,6 +43,8 @@ export type WorkspaceSettings = {
 	}
 	pinnedDirectories?: string[]
 	entryIcons?: Record<string, string>
+	vaultIcon?: string | null
+	writingActivity?: Record<string, number>
 	lastOpenedFilePaths?: string[]
 	expandedDirectories?: string[]
 }

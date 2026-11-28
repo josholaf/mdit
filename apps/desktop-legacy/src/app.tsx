@@ -1,5 +1,6 @@
 import type { getCurrentWindow } from "@tauri-apps/api/window"
 import { useDesktopRuntime, useWorkspaceState } from "@/state"
+import { WritingHeatmapPanel } from "./components/calendar/writing-heatmap-panel"
 import { ChatPanel } from "./components/chat/chat-panel"
 import { CollectionView } from "./components/collection-view/collection-view"
 import { CommandMenu } from "./components/command-menu/command-menu"
@@ -55,6 +56,7 @@ export function App() {
 						<CollectionView />
 					</div>
 					<Editor />
+					<WritingHeatmapPanel />
 					<ChatPanel />
 				</div>
 			</div>
