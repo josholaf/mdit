@@ -30,6 +30,10 @@ vi.mock("./history-navigation", () => ({
 	HistoryNavigation: () => <div data-testid="history-navigation" />,
 }))
 
+vi.mock("./breadcrumbs", () => ({
+	Breadcrumbs: () => <div data-testid="breadcrumbs" />,
+}))
+
 vi.mock("./info-button", () => ({
 	InfoButton: () => <div data-testid="info-button" />,
 }))
@@ -40,6 +44,10 @@ vi.mock("./tab", () => ({
 
 vi.mock("@/components/quick-note/window-pin-button", () => ({
 	WindowPinButton: () => <div data-testid="window-pin-button" />,
+}))
+
+vi.mock("@/components/calendar/writing-heatmap-panel", () => ({
+	CalendarToggleButton: () => <div data-testid="calendar-toggle-button" />,
 }))
 
 describe("Header", () => {

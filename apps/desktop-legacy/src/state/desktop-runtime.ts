@@ -35,6 +35,7 @@ import {
 	createWorkspaceRuntime,
 	createWorkspaceSettingsRepository,
 } from "./workspace"
+import { countWords } from "./workspace/settings"
 import { createTauriWorkspaceWatcher } from "./workspace/watch-tauri"
 
 const OPEN_WORKSPACE_PICKER = "open-workspace-picker"
@@ -82,14 +83,14 @@ export function createDesktopRuntime(mode: "workspace" | "detached") {
 			workspace.commands.registerLocalMutation([{ path, scope: "exact" }])
 			try {
 				if (!path.toLowerCase().endsWith(".md")) return
-				const { countWords } = await import("./workspace/settings")
-				const text = await fileSystem.readTextFile(path)
-				const words = countWords(text)
-				const prev = lastWordCounts.get(path) ?? 0
-				const delta = words - prev
+				const words = countWords(await fileSystem.readTextFile(path))
+				const previousWords = lastWordCounts.get(path)
 				lastWordCounts.set(path, words)
-				if (delta > 0) {
-					await workspace.commands.recordWritingWords(delta)
+				if (previousWords !== undefined && words > previousWords) {
+					await workspace.commands.recordWritingWords(
+						words - previousWords,
+						path,
+					)
 				}
 			} catch {
 				// activity tracking is best-effort

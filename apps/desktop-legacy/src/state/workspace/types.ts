@@ -22,12 +22,12 @@ export type WorkspaceState = {
 	expandedDirectories: string[]
 	isMigrationsComplete: boolean
 	pinnedDirectories: string[]
-	/** Absolute path -> Lucide icon name */
 	entryIcons: Record<string, string>
-	/** Lucide icon name for the vault/workspace itself */
 	vaultIcon: string | null
 	/** YYYY-MM-DD -> words written that day */
 	writingActivity: Record<string, number>
+	/** Path -> YYYY-MM-DD of the last save that added words (not persisted) */
+	writingEntries: Record<string, string>
 	aiLockedEntryPaths: Set<string>
 	selectedEntryPaths: Set<string>
 	selectionAnchorPath: string | null
@@ -42,14 +42,11 @@ export type WorkspaceSettings = {
 		autoSync: boolean
 	}
 	pinnedDirectories?: string[]
+	entryIcons?: Record<string, string>
+	vaultIcon?: string | null
+	writingActivity?: Record<string, number>
 	lastOpenedFilePaths?: string[]
 	expandedDirectories?: string[]
-	/** Relative path -> Lucide icon name */
-	entryIcons?: Record<string, string>
-	/** Lucide icon name for the vault */
-	vaultIcon?: string | null
-	/** YYYY-MM-DD -> words written */
-	writingActivity?: Record<string, number>
 }
 
 export type FileSystemDirectoryEntry = {

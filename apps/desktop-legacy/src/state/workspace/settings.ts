@@ -117,6 +117,38 @@ export function readDirectorySettings(
 	]
 }
 
+export function readEntryIconSettings(
+	workspacePath: string,
+	icons: unknown,
+): Record<string, string> {
+	if (!icons || typeof icons !== "object" || Array.isArray(icons)) {
+		return {}
+	}
+	const result: Record<string, string> = {}
+	for (const [path, icon] of Object.entries(icons)) {
+		if (typeof icon !== "string" || !icon.trim() || !path.trim()) {
+			continue
+		}
+		const absolute = resolve(workspacePath, normalizePathSeparators(path))
+		if (isPathEqualOrDescendant(absolute, workspacePath)) {
+			result[absolute] = icon.trim()
+		}
+	}
+	return result
+}
+
+export function storeEntryIconSettings(
+	workspacePath: string,
+	icons: Record<string, string>,
+): Record<string, string> {
+	return Object.fromEntries(
+		Object.entries(icons).map(([path, icon]) => [
+			relative(workspacePath, path) || ".",
+			icon,
+		]),
+	)
+}
+
 export function storeDirectorySettings(
 	workspacePath: string,
 	paths: string[],
@@ -138,38 +170,8 @@ export function readOpenedFileSettings(
 		.filter((path) => isPathEqualOrDescendant(path, workspacePath))
 }
 
-/** Relative path keys -> absolute path keys for entry icons */
-export function readEntryIcons(
-	workspacePath: string,
-	icons: unknown,
-): Record<string, string> {
-	if (!icons || typeof icons !== "object" || Array.isArray(icons)) {
-		return {}
-	}
-	const result: Record<string, string> = {}
-	for (const [relPath, iconName] of Object.entries(icons)) {
-		if (typeof relPath !== "string" || typeof iconName !== "string") continue
-		const trimmed = relPath.trim()
-		const name = iconName.trim()
-		if (!trimmed || !name) continue
-		const absolute = resolve(workspacePath, normalizePathSeparators(trimmed))
-		if (isPathEqualOrDescendant(absolute, workspacePath)) {
-			result[absolute] = name
-		}
-	}
-	return result
-}
-
-export function storeEntryIcons(
-	workspacePath: string,
-	icons: Record<string, string>,
-): Record<string, string> {
-	const result: Record<string, string> = {}
-	for (const [absolute, iconName] of Object.entries(icons)) {
-		if (!iconName?.trim()) continue
-		result[relative(workspacePath, absolute) || "."] = iconName.trim()
-	}
-	return result
+export function readVaultIconSetting(icon: unknown): string | null {
+	return typeof icon === "string" && icon.trim() ? icon.trim() : null
 }
 
 export function readWritingActivity(raw: unknown): Record<string, number> {
@@ -201,4 +203,3 @@ export function countWords(text: string): number {
 	if (!trimmed) return 0
 	return trimmed.split(/\s+/).filter((w) => w.length > 0).length
 }
-

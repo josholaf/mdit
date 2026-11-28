@@ -1,8 +1,14 @@
 import { describe, expect, it, vi } from "vitest"
 import {
+	countWords,
 	createWorkspaceSettingsRepository,
 	readDirectorySettings,
+	readEntryIconSettings,
 	readOpenedFileSettings,
+	readVaultIconSetting,
+	readWritingActivity,
+	storeEntryIconSettings,
+	todayKey,
 } from "./settings"
 
 describe("workspace settings", () => {
@@ -102,5 +108,56 @@ describe("workspace settings", () => {
 			settings.saveSettings("/vault", { pinnedDirectories: ["notes"] }),
 		).rejects.toThrow(error)
 		expect(writeTextFile).not.toHaveBeenCalled()
+	})
+
+	it("round-trips entry icons as workspace-relative paths", () => {
+		const icons = readEntryIconSettings("/vault", {
+			".": "home",
+			"notes/a.md": "star",
+			"/vault/inbox": "inbox",
+			"../outside.md": "skull",
+			"empty.md": " ",
+			"bad.md": 3,
+			" spaced.md": "rocket",
+		})
+		expect(icons).toEqual({
+			"/vault": "home",
+			"/vault/notes/a.md": "star",
+			"/vault/inbox": "inbox",
+			"/vault/ spaced.md": "rocket",
+		})
+		expect(storeEntryIconSettings("/vault", icons)).toEqual({
+			".": "home",
+			"notes/a.md": "star",
+			" spaced.md": "rocket",
+			inbox: "inbox",
+		})
+		expect(readEntryIconSettings("/vault", ["notes"])).toEqual({})
+	})
+
+	it("keeps only valid writing activity days", () => {
+		expect(
+			readWritingActivity({
+				"2026-11-27": 120.7,
+				"2026-11-28": -3,
+				"2026-1-1": 10,
+				"2026-11-29": Number.POSITIVE_INFINITY,
+				"2026-11-30": "12",
+			}),
+		).toEqual({ "2026-11-27": 120 })
+		expect(readWritingActivity(null)).toEqual({})
+		expect(readWritingActivity([1])).toEqual({})
+	})
+
+	it("reads vault icons and formats day keys", () => {
+		expect(readVaultIconSetting(" brain ")).toBe("brain")
+		expect(readVaultIconSetting("  ")).toBeNull()
+		expect(readVaultIconSetting(3)).toBeNull()
+		expect(todayKey(new Date(2026, 0, 5))).toBe("2026-01-05")
+	})
+
+	it("counts words separated by whitespace", () => {
+		expect(countWords("")).toBe(0)
+		expect(countWords("  # Title\n\nsome  words here ")).toBe(5)
 	})
 })

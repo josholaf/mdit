@@ -77,6 +77,7 @@ const buildState = (
 	entryIcons: {},
 	vaultIcon: null,
 	writingActivity: {},
+	writingEntries: {},
 	aiLockedEntryPaths: new Set(),
 	selectedEntryPaths: new Set(),
 	selectionAnchorPath: null,

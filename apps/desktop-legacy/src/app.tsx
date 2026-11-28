@@ -6,8 +6,10 @@ import { CollectionView } from "./components/collection-view/collection-view"
 import { CommandMenu } from "./components/command-menu/command-menu"
 import { Editor } from "./components/editor/editor"
 import { FileExplorer } from "./components/file-explorer/file-explorer"
+import { IconPickerDialog } from "./components/icon-picker/icon-picker-dialog"
 import { ImageEditDialog } from "./components/image/image-edit-dialog"
 import { ImagePreviewDialog } from "./components/image/image-preview-dialog"
+import { Ribbon } from "./components/ribbon/ribbon"
 import { SettingsDialog } from "./components/settings"
 import { Welcome } from "./components/welcome/welcome"
 import { ScreenCaptureProvider } from "./contexts/screen-capture-context"
@@ -48,6 +50,7 @@ export function App() {
 		<ScreenCaptureProvider>
 			<div className={`h-screen flex flex-col ${mutedBgClass}`}>
 				<div className="flex-1 overflow-hidden flex">
+					<Ribbon />
 					<div className="group/side flex">
 						<FileExplorer />
 						<CollectionView />
@@ -61,6 +64,7 @@ export function App() {
 			<CommandMenu />
 			<ImagePreviewDialog />
 			<ImageEditDialog />
+			<IconPickerDialog />
 		</ScreenCaptureProvider>
 	)
 }

@@ -14,8 +14,8 @@ import {
 import { getFolderNameFromPath } from "@mdit/utils/path-utils"
 import { ChevronDown, InboxIcon, MinusIcon } from "lucide-react"
 import { HotkeyKbd } from "@/components/hotkeys/hotkey-kbd"
+import { EntryIcon } from "@/components/icon-picker/entry-icon"
 import { useDesktopRuntime, useHotkeysState, useWorkspaceState } from "@/state"
-import { EntryIcon } from "./entry-icon"
 
 const REMOVE_WORKSPACE_SELECTOR = '[data-remove-workspace="true"]'
 
@@ -39,16 +39,16 @@ type WorkspaceDropdownProps = {
 }
 
 const VAULT_ICON_CHOICES = [
-	"Inbox",
-	"Library",
-	"BookOpen",
-	"Notebook",
-	"Brain",
-	"Sparkles",
-	"FolderKanban",
-	"Layers",
-	"Archive",
-	"Home",
+	"inbox",
+	"library",
+	"book-open",
+	"notebook",
+	"brain",
+	"sparkles",
+	"folder-kanban",
+	"layers",
+	"archive",
+	"house",
 ] as const
 
 export function WorkspaceDropdown({
@@ -76,7 +76,7 @@ export function WorkspaceDropdown({
 					size="sm"
 					className="text-foreground/90 tracking-tight min-w-0 flex-1 px-1.5! h-8 hover:bg-background/40"
 				>
-					<EntryIcon name={vaultIcon ?? "Inbox"} className="size-4" />
+					<EntryIcon icon={vaultIcon} fallback={InboxIcon} />
 					<span className="flex-1 text-start text-sm text-overflow-mask">
 						{currentWorkspaceName}
 					</span>
@@ -172,7 +172,7 @@ export function WorkspaceDropdown({
 										void setVaultIcon(vaultIcon === name ? null : name)
 									}}
 								>
-									<EntryIcon name={name} className="size-4" />
+									<EntryIcon icon={name} fallback={InboxIcon} />
 								</button>
 							))}
 						</div>

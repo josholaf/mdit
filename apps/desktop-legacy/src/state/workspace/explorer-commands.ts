@@ -53,28 +53,14 @@ export function createWorkspaceExplorerCommands({
 		})
 	}
 
-	const uiSlice = (s: WorkspaceState) => ({
-		expandedDirectories: s.expandedDirectories,
-		pinnedDirectories: s.pinnedDirectories,
-		entryIcons: s.entryIcons,
-		vaultIcon: s.vaultIcon,
-		writingActivity: s.writingActivity,
-	})
-
 	const setExpandedDirectories = async (paths: Set<string> | string[]) => {
 		const previous = getSnapshot()
-		const { workspacePath } = previous
-		if (!workspacePath) return
-		const next = {
-			...uiSlice(previous),
-			expandedDirectories: [...new Set(paths)],
+		const { workspacePath, pinnedDirectories, expandedDirectories } = previous
+		if (!workspacePath) {
+			return
 		}
-		if (
-			!areStringArraysEqual(
-				previous.expandedDirectories,
-				next.expandedDirectories,
-			)
-		) {
+		const next = { expandedDirectories: [...new Set(paths)], pinnedDirectories }
+		if (!areStringArraysEqual(expandedDirectories, next.expandedDirectories)) {
 			state.update(next)
 			await persistDirectoryUi(workspacePath, previous, next)
 		}
@@ -82,7 +68,7 @@ export function createWorkspaceExplorerCommands({
 
 	const updatePinnedDirectories = async (path: string, pinned: boolean) => {
 		const previous = getSnapshot()
-		const { workspacePath } = previous
+		const { workspacePath, pinnedDirectories, expandedDirectories } = previous
 		const normalized = normalizePathSeparators(path)
 		if (
 			!workspacePath ||
@@ -94,58 +80,79 @@ export function createWorkspaceExplorerCommands({
 			return
 		}
 		const next = {
-			...uiSlice(previous),
+			expandedDirectories,
 			pinnedDirectories: pinned
-				? [...new Set([...previous.pinnedDirectories, normalized])]
-				: previous.pinnedDirectories.filter((value) => value !== normalized),
+				? [...new Set([...pinnedDirectories, normalized])]
+				: pinnedDirectories.filter((value) => value !== normalized),
 		}
-		if (
-			!areStringArraysEqual(
-				previous.pinnedDirectories,
-				next.pinnedDirectories,
-			)
-		) {
+		if (!areStringArraysEqual(pinnedDirectories, next.pinnedDirectories)) {
 			state.update(next)
 			await persistDirectoryUi(workspacePath, previous, next)
 		}
 	}
 
-	const setEntryIcon = async (path: string, iconName: string | null) => {
+	const setEntryIcon = async (path: string, icon: string | null) => {
 		const previous = getSnapshot()
-		const { workspacePath } = previous
-		if (!workspacePath) return
+		const { workspacePath, entryIcons } = previous
+		if (!workspacePath) {
+			return
+		}
 		const normalized = normalizePathSeparators(path)
-		const nextIcons = { ...previous.entryIcons }
-		if (iconName?.trim()) nextIcons[normalized] = iconName.trim()
-		else delete nextIcons[normalized]
-		const next = { ...uiSlice(previous), entryIcons: nextIcons }
+		if ((entryIcons[normalized] ?? null) === icon) {
+			return
+		}
+		const nextIcons = { ...entryIcons }
+		if (icon) {
+			nextIcons[normalized] = icon
+		} else {
+			delete nextIcons[normalized]
+		}
+		const next = {
+			expandedDirectories: previous.expandedDirectories,
+			pinnedDirectories: previous.pinnedDirectories,
+			entryIcons: nextIcons,
+		}
 		state.update({ entryIcons: nextIcons })
 		await persistDirectoryUi(workspacePath, previous, next)
 	}
 
-	const setVaultIcon = async (iconName: string | null) => {
+	const setVaultIcon = async (icon: string | null) => {
 		const previous = getSnapshot()
 		const { workspacePath } = previous
-		if (!workspacePath) return
-		const vaultIcon = iconName?.trim() || null
-		const next = { ...uiSlice(previous), vaultIcon }
-		state.update({ vaultIcon })
-		await persistDirectoryUi(workspacePath, previous, next)
+		if (!workspacePath || previous.vaultIcon === icon) {
+			return
+		}
+		state.update({ vaultIcon: icon })
+		await persistDirectoryUi(workspacePath, previous, {
+			...previous,
+			vaultIcon: icon,
+		})
 	}
 
-	const recordWritingWords = async (wordsAdded: number) => {
-		if (wordsAdded <= 0) return
+	const recordWritingWords = async (words: number, path?: string) => {
 		const previous = getSnapshot()
 		const { workspacePath } = previous
-		if (!workspacePath) return
+		if (!workspacePath || words <= 0) {
+			return
+		}
 		const day = todayKey()
 		const writingActivity = {
 			...previous.writingActivity,
-			[day]: (previous.writingActivity[day] ?? 0) + Math.floor(wordsAdded),
+			[day]: (previous.writingActivity[day] ?? 0) + Math.floor(words),
 		}
-		const next = { ...uiSlice(previous), writingActivity }
-		state.update({ writingActivity })
-		await persistDirectoryUi(workspacePath, previous, next)
+		state.update({
+			writingActivity,
+			writingEntries: path
+				? {
+						...previous.writingEntries,
+						[normalizePathSeparators(path)]: day,
+					}
+				: previous.writingEntries,
+		})
+		await persistDirectoryUi(workspacePath, previous, {
+			...previous,
+			writingActivity,
+		})
 	}
 
 	const setCurrentCollectionPath = (
@@ -186,11 +193,11 @@ export function createWorkspaceExplorerCommands({
 					: [...expandedDirectories, path],
 			)
 		},
-		pinDirectory: (path: string) => updatePinnedDirectories(path, true),
-		unpinDirectory: (path: string) => updatePinnedDirectories(path, false),
 		setEntryIcon,
 		setVaultIcon,
 		recordWritingWords,
+		pinDirectory: (path: string) => updatePinnedDirectories(path, true),
+		unpinDirectory: (path: string) => updatePinnedDirectories(path, false),
 		setCurrentCollectionPath,
 		toggleCollectionView: () => {
 			const { currentCollectionPath, lastCollectionPath } = getSnapshot()

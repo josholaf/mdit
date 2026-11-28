@@ -1,9 +1,17 @@
 import { useDroppable } from "@dnd-kit/react"
 import { cn } from "@mdit/ui/lib/utils"
-import { ChevronRight, PanelLeftIcon } from "lucide-react"
+import { normalizePathSeparators } from "@mdit/utils/path-utils"
+import {
+	ChevronRight,
+	FolderClosedIcon,
+	FolderOpenIcon,
+	PanelLeftIcon,
+} from "lucide-react"
 import { useCallback } from "react"
 import { useEditorDropOwnership } from "@/components/dnd/editor-drop-ownership"
 import { useIsHoveredExplorerDropPath } from "@/components/dnd/explorer-drag-state"
+import { EntryIcon } from "@/components/icon-picker/entry-icon"
+import { useWorkspaceState } from "@/state"
 import { useAutoExpandOnHover } from "../hooks/use-auto-expand-on-hover"
 import { useFolderDropZone } from "../hooks/use-folder-drop-zone"
 import { useInlineEditableInput } from "../hooks/use-inline-editable-input"
@@ -47,6 +55,9 @@ export function DirectoryTreeNode({
 		onEntryPrimaryAction,
 		onEntryContextMenu,
 	})
+	const customIcon = useWorkspaceState(
+		(state) => state.entryIcons[normalizePathSeparators(entry.path)],
+	)
 	const isExplorerDropEnabled =
 		entry.isDirectory && !isBusy && isFileExplorerOpen
 
@@ -159,11 +170,19 @@ export function DirectoryTreeNode({
 							>
 								<ChevronRight
 									className={cn(
-										"size-4 transition-transform duration-150",
+										"size-3.5 transition-transform duration-150",
 										isExpanded && "rotate-90",
 									)}
 								/>
 							</div>
+							<EntryIcon
+								icon={customIcon}
+								fallback={isExpanded ? FolderOpenIcon : FolderClosedIcon}
+								className={cn(
+									"mr-1.5 text-foreground/60",
+									customIcon && "text-foreground/80",
+								)}
+							/>
 							<div
 								className={cn(
 									"relative flex-1 flex items-center overflow-hidden whitespace-nowrap",

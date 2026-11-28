@@ -1,5 +1,10 @@
 import { cn } from "@mdit/ui/lib/utils"
+import { normalizePathSeparators } from "@mdit/utils/path-utils"
+import { FileIcon, FileImageIcon, FileTextIcon } from "lucide-react"
 import { useMemo } from "react"
+import { EntryIcon } from "@/components/icon-picker/entry-icon"
+import { useWorkspaceState } from "@/state"
+import { isImageFile } from "@/utils/file-icon"
 import { useInlineEditableInput } from "../hooks/use-inline-editable-input"
 import { getEntryButtonClassName } from "../utils/entry-classnames"
 import type { TreeNodeProps } from "./tree-node.types"
@@ -57,6 +62,14 @@ export function FileTreeNode({
 		[entry.isDirectory, extension],
 	)
 	const isActiveNote = isMarkdown && node.isActive
+	const customIcon = useWorkspaceState(
+		(state) => state.entryIcons[normalizePathSeparators(entry.path)],
+	)
+	const fallbackIcon = isMarkdown
+		? FileTextIcon
+		: extension && isImageFile(extension)
+			? FileImageIcon
+			: FileIcon
 	const showExtension = !isMarkdown && extension
 
 	const renameInput = useInlineEditableInput({
@@ -95,6 +108,14 @@ export function FileTreeNode({
 				aria-current={isActiveNote ? "page" : undefined}
 				disabled={isBusy}
 			>
+				<EntryIcon
+					icon={customIcon}
+					fallback={fallbackIcon}
+					className={cn(
+						"mr-1.5 text-foreground/60",
+						customIcon && "text-foreground/80",
+					)}
+				/>
 				<div
 					className={cn(
 						"relative flex-1 overflow-hidden whitespace-nowrap",

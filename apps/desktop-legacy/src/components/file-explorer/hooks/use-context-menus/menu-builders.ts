@@ -31,6 +31,7 @@ type BaseMenuOptions = {
 	beginRenaming: (entry: WorkspaceEntry) => void
 	handleDeleteEntries: (paths: string[]) => Promise<void>
 	hasLockedPathConflict: (paths: string[]) => boolean
+	openIconPicker: (path: string) => void
 	workspacePath: string | null
 }
 
@@ -86,6 +87,7 @@ export const showEntryContextMenu = async ({
 	hasLockedPathConflict,
 	lookupEntryByPath,
 	openImageEdit,
+	openIconPicker,
 	workspacePath,
 }: EntryMenuOptions) => {
 	try {
@@ -204,6 +206,13 @@ export const showEntryContextMenu = async ({
 					beginRenaming(entry)
 				},
 			}),
+			MenuItem.new({
+				id: `set-icon-${entry.path}`,
+				text: "Change Icon…",
+				action: async () => {
+					openIconPicker(entry.path)
+				},
+			}),
 		)
 
 		if (selectionPaths.length > 0) {
@@ -249,6 +258,7 @@ export const showDirectoryContextMenu = async ({
 	createNote,
 	handleDeleteEntries,
 	hasLockedPathConflict,
+	openIconPicker,
 	workspacePath,
 	pinnedDirectories,
 	pinDirectory,
@@ -400,6 +410,13 @@ export const showDirectoryContextMenu = async ({
 					enabled: !hasLockedTargets,
 					action: async () => {
 						beginRenaming(directoryEntry)
+					},
+				}),
+				await MenuItem.new({
+					id: `set-icon-directory-${directoryPath}`,
+					text: "Change Icon…",
+					action: async () => {
+						openIconPicker(directoryPath)
 					},
 				}),
 			)

@@ -19,10 +19,11 @@ import {
 import { readWorkspaceEntriesFromPath } from "./filesystem"
 import {
 	readDirectorySettings,
-	readEntryIcons,
+	readEntryIconSettings,
+	readVaultIconSetting,
 	readWritingActivity,
 	storeDirectorySettings,
-	storeEntryIcons,
+	storeEntryIconSettings,
 	type WorkspaceSettingsRepository,
 } from "./settings"
 import type {
@@ -32,6 +33,12 @@ import type {
 	WorkspaceState,
 } from "./types"
 import type { WorkspaceWatchDependencies } from "./watch-types"
+
+type DirectoryUi = Pick<
+	WorkspaceState,
+	"expandedDirectories" | "pinnedDirectories"
+> &
+	Partial<Pick<WorkspaceState, "entryIcons" | "vaultIcon" | "writingActivity">>
 
 type EntryCreated = {
 	parentPath: string
@@ -50,6 +57,17 @@ const remapOptionalPath = (
 	oldPath: string,
 	newPath: string,
 ) => (path === null ? null : remapPath(path, oldPath, newPath))
+
+const areRecordsEqual = <T>(
+	previous: Record<string, T>,
+	next: Record<string, T>,
+) => {
+	const keys = Object.keys(next)
+	return (
+		keys.length === Object.keys(previous).length &&
+		keys.every((key) => previous[key] === next[key])
+	)
+}
 
 const collectDirectories = (entries: WorkspaceEntry[], paths: Set<string>) => {
 	for (const entry of entries) {
@@ -107,22 +125,8 @@ export function createWorkspaceTreeProjection({
 
 	const persistDirectoryUi = async (
 		workspacePath: string,
-		previous: Pick<
-			WorkspaceState,
-			| "expandedDirectories"
-			| "pinnedDirectories"
-			| "entryIcons"
-			| "vaultIcon"
-			| "writingActivity"
-		>,
-		next: Pick<
-			WorkspaceState,
-			| "expandedDirectories"
-			| "pinnedDirectories"
-			| "entryIcons"
-			| "vaultIcon"
-			| "writingActivity"
-		>,
+		previous: DirectoryUi,
+		next: DirectoryUi,
 	) => {
 		const patch: Partial<WorkspaceSettings> = {}
 		if (
@@ -144,24 +148,22 @@ export function createWorkspaceTreeProjection({
 				next.pinnedDirectories,
 			)
 		}
-		const prevIcons = previous.entryIcons ?? {}
-		const nextIcons = next.entryIcons ?? {}
-		const iconsChanged =
-			Object.keys(prevIcons).length !== Object.keys(nextIcons).length ||
-			Object.entries(nextIcons).some(([path, name]) => prevIcons[path] !== name)
-		if (iconsChanged) {
-			patch.entryIcons = storeEntryIcons(workspacePath, nextIcons)
+		if (
+			previous.entryIcons &&
+			next.entryIcons &&
+			!areRecordsEqual(previous.entryIcons, next.entryIcons)
+		) {
+			patch.entryIcons = storeEntryIconSettings(workspacePath, next.entryIcons)
 		}
-		if ((previous.vaultIcon ?? null) !== (next.vaultIcon ?? null)) {
-			patch.vaultIcon = next.vaultIcon ?? null
+		if (next.vaultIcon !== undefined && previous.vaultIcon !== next.vaultIcon) {
+			patch.vaultIcon = next.vaultIcon
 		}
-		const prevAct = previous.writingActivity ?? {}
-		const nextAct = next.writingActivity ?? {}
-		const activityChanged =
-			Object.keys(prevAct).length !== Object.keys(nextAct).length ||
-			Object.entries(nextAct).some(([day, count]) => prevAct[day] !== count)
-		if (activityChanged) {
-			patch.writingActivity = nextAct
+		if (
+			previous.writingActivity &&
+			next.writingActivity &&
+			!areRecordsEqual(previous.writingActivity, next.writingActivity)
+		) {
+			patch.writingActivity = next.writingActivity
 		}
 		if (Object.keys(patch).length > 0) {
 			try {
@@ -181,7 +183,7 @@ export function createWorkspaceTreeProjection({
 		if (!workspacePath) {
 			return
 		}
-		const stored = loadedSettings
+		const storedDirectories = loadedSettings
 			? {
 					expandedDirectories: readDirectorySettings(
 						workspacePath,
@@ -191,50 +193,32 @@ export function createWorkspaceTreeProjection({
 						workspacePath,
 						loadedSettings.pinnedDirectories,
 					),
-					entryIcons: readEntryIcons(workspacePath, loadedSettings.entryIcons),
-					vaultIcon:
-						typeof loadedSettings.vaultIcon === "string"
-							? loadedSettings.vaultIcon
-							: null,
+					entryIcons: readEntryIconSettings(
+						workspacePath,
+						loadedSettings.entryIcons,
+					),
+					vaultIcon: readVaultIconSetting(loadedSettings.vaultIcon),
 					writingActivity: readWritingActivity(loadedSettings.writingActivity),
 				}
-			: {
-					expandedDirectories: previous.expandedDirectories,
-					pinnedDirectories: previous.pinnedDirectories,
-					entryIcons: previous.entryIcons,
-					vaultIcon: previous.vaultIcon,
-					writingActivity: previous.writingActivity,
-				}
+			: previous
 		const validDirectories = new Set<string>()
 		collectDirectories(entries, validDirectories)
-		const validPaths = new Set<string>()
-		const walk = (list: WorkspaceEntry[]) => {
-			for (const entry of list) {
-				validPaths.add(entry.path)
-				if (entry.children) walk(entry.children)
-			}
-		}
-		walk(entries)
-		const nextIcons: Record<string, string> = {}
-		for (const [path, icon] of Object.entries(stored.entryIcons)) {
-			if (validPaths.has(path)) nextIcons[path] = icon
-		}
 		const next = {
 			entries,
-			expandedDirectories: stored.expandedDirectories.filter((path) =>
-				validDirectories.has(path),
+			expandedDirectories: storedDirectories.expandedDirectories.filter(
+				(path) => validDirectories.has(path),
 			),
-			pinnedDirectories: stored.pinnedDirectories.filter(
+			pinnedDirectories: storedDirectories.pinnedDirectories.filter(
 				(path) =>
 					path === normalizePathSeparators(workspacePath) ||
 					validDirectories.has(path),
 			),
-			entryIcons: nextIcons,
-			vaultIcon: stored.vaultIcon,
-			writingActivity: stored.writingActivity,
+			entryIcons: storedDirectories.entryIcons,
+			vaultIcon: storedDirectories.vaultIcon,
+			writingActivity: storedDirectories.writingActivity,
 		}
 		state.update(next)
-		await persistDirectoryUi(workspacePath, stored, next)
+		await persistDirectoryUi(workspacePath, storedDirectories, next)
 	}
 
 	const readEntries = (path: string) =>
@@ -296,15 +280,8 @@ export function createWorkspaceTreeProjection({
 		expandNewDirectory,
 	}: EntryCreated) => {
 		const previous = getSnapshot()
-		const {
-			workspacePath,
-			entries,
-			expandedDirectories,
-			pinnedDirectories,
-			entryIcons,
-			vaultIcon,
-			writingActivity,
-		} = previous
+		const { workspacePath, entries, expandedDirectories, pinnedDirectories } =
+			previous
 		if (!workspacePath) {
 			return
 		}
@@ -327,9 +304,6 @@ export function createWorkspaceTreeProjection({
 						]
 					: expandedDirectories,
 			pinnedDirectories,
-			entryIcons,
-			vaultIcon,
-			writingActivity,
 		}
 		state.update(next)
 		await persistDirectoryUi(workspacePath, previous, next)
@@ -349,17 +323,13 @@ export function createWorkspaceTreeProjection({
 		}
 		const keep = (path: string) =>
 			!paths.some((deleted) => isPathEqualOrDescendant(path, deleted))
-		const nextIcons: Record<string, string> = {}
-		for (const [path, icon] of Object.entries(previous.entryIcons)) {
-			if (keep(path)) nextIcons[path] = icon
-		}
 		const next = {
 			entries: removeEntriesFromState(previous.entries, paths),
 			expandedDirectories: previous.expandedDirectories.filter(keep),
 			pinnedDirectories: previous.pinnedDirectories.filter(keep),
-			entryIcons: nextIcons,
-			vaultIcon: previous.vaultIcon,
-			writingActivity: previous.writingActivity,
+			entryIcons: Object.fromEntries(
+				Object.entries(previous.entryIcons).filter(([path]) => keep(path)),
+			),
 			selectedEntryPaths: new Set(
 				[...previous.selectedEntryPaths].filter(keep),
 			),
@@ -392,19 +362,18 @@ export function createWorkspaceTreeProjection({
 			return Promise.resolve()
 		}
 		const remap = (path: string) => remapPath(path, oldPath, newPath)
-		const nextIcons: Record<string, string> = {}
-		for (const [path, icon] of Object.entries(previous.entryIcons)) {
-			nextIcons[remap(path)] = icon
-		}
 		const next = {
 			entries,
 			expandedDirectories: [
 				...new Set(previous.expandedDirectories.map(remap)),
 			],
 			pinnedDirectories: [...new Set(previous.pinnedDirectories.map(remap))],
-			entryIcons: nextIcons,
-			vaultIcon: previous.vaultIcon,
-			writingActivity: previous.writingActivity,
+			entryIcons: Object.fromEntries(
+				Object.entries(previous.entryIcons).map(([path, icon]) => [
+					remap(path),
+					icon,
+				]),
+			),
 			selectedEntryPaths: new Set([...previous.selectedEntryPaths].map(remap)),
 			selectionAnchorPath: remapOptionalPath(
 				previous.selectionAnchorPath,
