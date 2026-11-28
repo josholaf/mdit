@@ -166,7 +166,7 @@ function MonthCalendar() {
 							className={cn(
 								"relative flex h-8 items-center justify-center",
 								!isSameMonth(day, month) && "text-muted-foreground/40",
-								isSameDay(day, today) && "font-semibold text-violet-400",
+								isSameDay(day, today) && "font-semibold text-muted-foreground",
 							)}
 							title={words > 0 ? `${words} words` : undefined}
 						>
