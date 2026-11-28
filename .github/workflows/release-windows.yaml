@@ -23,19 +23,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate release version
         env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ inputs.version }}
+          GH_TOKEN: \${{ github.token }}
+          RELEASE_VERSION: \${{ inputs.version }}
         run: |
           previous=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
             --jq '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))] | first | .tagName // ""')
-          python3 - <<'PY'
+          PREVIOUS_RELEASE="$previous" python3 - <<'PY'
           import json
           import os
           import re
           from pathlib import Path
 
           def version_tuple(value):
-              if not re.fullmatch(r"(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)", value):
+              if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", value):
                   raise SystemExit("Version must be MAJOR.MINOR.PATCH without a v prefix")
               return tuple(map(int, value.split(".")))
 
@@ -46,30 +46,31 @@ jobs:
               raise SystemExit(f"{requested} must be newer than the app version {current}")
           if previous and version_tuple(requested) <= version_tuple(previous.removeprefix("v")):
               raise SystemExit(f"{requested} must be newer than the latest release {previous}")
+          print(f"Validated Windows release version {requested}")
           PY
-        env:
-          PREVIOUS_RELEASE: ${{ steps.previous.outputs.tag }}
+      - name: Install Node.js and pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: pnpm/action-setup@v4
+        with:
+          version: "12.18.0"
       - name: Run desktop frontend checks
         run: |
-          corepack enable
-          corepack prepare pnpm@12.18.0 --activate
           pnpm install --frozen-lockfile
-          pnpm --dir apps/desktop-legacy ci
+          pnpm --filter @mdit/desktop-legacy ci
 
   build-windows:
     needs: validate
     runs-on: windows-latest
-    permissions:
-      contents: read
     env:
-      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_VERSION: \${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: "12.18.0"
       - uses: dtolnay/rust-toolchain@stable
@@ -87,7 +88,7 @@ jobs:
         run: |
           pnpm exec tauri build \
             --config src-tauri/tauri.windows.conf.json \
-            --config "{\\"version\\":\\"$RELEASE_VERSION\\"}" \
+            --config "{\"version\":\"$RELEASE_VERSION\"}" \
             --bundles nsis,msi --no-sign
       - name: Collect installers
         shell: pwsh
@@ -115,8 +116,8 @@ jobs:
     permissions:
       contents: write
     env:
-      GH_TOKEN: ${{ github.token }}
-      RELEASE_VERSION: ${{ inputs.version }}
+      GH_TOKEN: \${{ github.token }}
+      RELEASE_VERSION: \${{ inputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
