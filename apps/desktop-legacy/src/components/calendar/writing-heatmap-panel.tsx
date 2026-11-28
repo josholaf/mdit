@@ -118,7 +118,7 @@ function MonthCalendar() {
 			<div className="flex items-center justify-between pb-3">
 				<h2 className="font-semibold text-2xl tracking-tight">
 					{format(month, "MMM")}{" "}
-					<span className="text-violet-400">{format(month, "yyyy")}</span>
+					<span className="text-muted-foreground">{format(month, "yyyy")}</span>
 				</h2>
 				<div className="flex items-center">
 					<Button
@@ -166,7 +166,7 @@ function MonthCalendar() {
 							className={cn(
 								"relative flex h-8 items-center justify-center",
 								!isSameMonth(day, month) && "text-muted-foreground/40",
-								isSameDay(day, today) && "font-semibold text-violet-400",
+								isSameDay(day, today) && "font-semibold text-muted-foreground",
 							)}
 							title={words > 0 ? `${words} words` : undefined}
 						>
@@ -197,7 +197,7 @@ function TodayCard() {
 				title={`Goal: ${DAILY_WORD_GOAL} words`}
 			>
 				<div
-					className="h-full rounded-full bg-violet-400 transition-[width]"
+					className="h-full rounded-full bg-muted-foreground/60 transition-[width]"
 					style={{ width: `${progress}%` }}
 				/>
 			</div>
@@ -240,7 +240,6 @@ function ActivityHeatmap() {
 			<div />
 			{monthLabels.map((label, index) => (
 				<div
-					// biome-ignore lint/suspicious/noArrayIndexKey: fixed week columns
 					key={index}
 					className="overflow-visible whitespace-nowrap leading-4"
 				>
