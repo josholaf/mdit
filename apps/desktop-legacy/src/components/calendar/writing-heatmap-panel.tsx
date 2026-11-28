@@ -240,7 +240,6 @@ function ActivityHeatmap() {
 			<div />
 			{monthLabels.map((label, index) => (
 				<div
-					// biome-ignore lint/suspicious/noArrayIndexKey: fixed week columns
 					key={index}
 					className="overflow-visible whitespace-nowrap leading-4"
 				>
