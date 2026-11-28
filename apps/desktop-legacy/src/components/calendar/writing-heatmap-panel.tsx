@@ -296,20 +296,19 @@ function HeatmapRow({
 	)
 }
 
-function collectTodayNotes(
+function collectNotes(
 	entries: WorkspaceEntry[],
 	today: Date,
-	paths: Set<string>,
+	notes: { all: Set<string>; today: Set<string> },
 ) {
 	for (const entry of entries) {
 		if (entry.isDirectory) {
-			collectTodayNotes(entry.children ?? [], today, paths)
-		} else if (
-			entry.name.toLowerCase().endsWith(".md") &&
-			entry.modifiedAt &&
-			isSameDay(entry.modifiedAt, today)
-		) {
-			paths.add(entry.path)
+			collectNotes(entry.children ?? [], today, notes)
+		} else if (entry.name.toLowerCase().endsWith(".md")) {
+			notes.all.add(entry.path)
+			if (entry.modifiedAt && isSameDay(entry.modifiedAt, today)) {
+				notes.today.add(entry.path)
+			}
 		}
 	}
 }
@@ -321,13 +320,13 @@ function EntriesToday() {
 
 	const notes = useMemo(() => {
 		const today = new Date()
-		const paths = new Set<string>()
-		collectTodayNotes(entries, today, paths)
+		const notes = { all: new Set<string>(), today: new Set<string>() }
+		collectNotes(entries, today, notes)
 		const key = todayKey(today)
 		for (const [path, day] of Object.entries(writingEntries)) {
-			if (day === key) paths.add(path)
+			if (day === key && notes.all.has(path)) notes.today.add(path)
 		}
-		return [...paths].sort()
+		return [...notes.today].sort()
 	}, [entries, writingEntries])
 
 	return (
