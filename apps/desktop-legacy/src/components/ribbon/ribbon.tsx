@@ -48,12 +48,14 @@ export function Ribbon() {
 			isChatPanelOpen: s.isChatPanelOpen,
 		})),
 	)
-	const { workspacePath, isCollectionViewOpen } = useWorkspaceState(
-		useShallow((s) => ({
-			workspacePath: s.workspacePath,
-			isCollectionViewOpen: s.currentCollectionPath !== null,
-		})),
-	)
+	const { workspacePath, isCollectionViewOpen, lastCollectionPath } =
+		useWorkspaceState(
+			useShallow((s) => ({
+				workspacePath: s.workspacePath,
+				isCollectionViewOpen: s.currentCollectionPath !== null,
+				lastCollectionPath: s.lastCollectionPath,
+			})),
+		)
 	const hotkeys = useHotkeysState((s) => s.hotkeys)
 
 	return (
@@ -93,6 +95,7 @@ export function Ribbon() {
 				icon={LayoutGridIcon}
 				label="Collection view"
 				isActive={isCollectionViewOpen}
+				disabled={!isCollectionViewOpen && !lastCollectionPath}
 				onClick={toggleCollectionView}
 			/>
 			{chatPanelBetaEnabled && (
