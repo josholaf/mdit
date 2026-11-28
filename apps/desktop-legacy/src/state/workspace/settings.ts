@@ -129,10 +129,7 @@ export function readEntryIconSettings(
 		if (typeof icon !== "string" || !icon.trim() || !path.trim()) {
 			continue
 		}
-		const absolute = resolve(
-			workspacePath,
-			normalizePathSeparators(path.trim()),
-		)
+		const absolute = resolve(workspacePath, normalizePathSeparators(path))
 		if (isPathEqualOrDescendant(absolute, workspacePath)) {
 			result[absolute] = icon.trim()
 		}

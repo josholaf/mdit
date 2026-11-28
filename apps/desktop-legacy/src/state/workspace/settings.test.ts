@@ -114,15 +114,18 @@ describe("workspace settings", () => {
 			"../outside.md": "skull",
 			"empty.md": " ",
 			"bad.md": 3,
+			" spaced.md": "rocket",
 		})
 		expect(icons).toEqual({
 			"/vault": "home",
 			"/vault/notes/a.md": "star",
 			"/vault/inbox": "inbox",
+			"/vault/ spaced.md": "rocket",
 		})
 		expect(storeEntryIconSettings("/vault", icons)).toEqual({
 			".": "home",
 			"notes/a.md": "star",
+			" spaced.md": "rocket",
 			inbox: "inbox",
 		})
 		expect(readEntryIconSettings("/vault", ["notes"])).toEqual({})
