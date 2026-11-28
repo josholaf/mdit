@@ -15,10 +15,11 @@
 		overscroll-behavior: none;
 		scrollbar-width: thin;
 		scrollbar-color: color-mix(
-			in srgb,
-			var(--muted-foreground) 34%,
-			transparent
-		) transparent;
+				in srgb,
+				var(--muted-foreground) 34%,
+				transparent
+			)
+			transparent;
 	}
 
 	html {
