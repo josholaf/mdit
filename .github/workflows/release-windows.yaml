@@ -27,7 +27,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           previous=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
-            --jq '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))] | first | .tagName // ""')
+            --jq '[.[] | select(.tagName | test("^v[0-9]+\.[0-9]+\.[0-9]+$"))] | first | .tagName // ""')
           PREVIOUS_RELEASE="$previous" python3 - <<'PY'
           import json
           import os
@@ -35,7 +35,7 @@ jobs:
           from pathlib import Path
 
           def version_tuple(value):
-              if not re.fullmatch(r"(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)", value):
+              if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", value):
                   raise SystemExit("Version must be MAJOR.MINOR.PATCH without a v prefix")
               return tuple(map(int, value.split(".")))
 
@@ -84,7 +84,7 @@ jobs:
         run: |
           pnpm exec tauri build \
             --config src-tauri/tauri.windows.conf.json \
-            --config "{\\"version\\":\\"$RELEASE_VERSION\\"}" \
+            --config "{\"version\":\"$RELEASE_VERSION\"}" \
             --bundles nsis,msi --no-sign
       - name: Collect installers
         shell: pwsh
