@@ -97,7 +97,10 @@ export function createDocumentSessions({
 						content,
 						diskRevision: savedRevision,
 					}))
-					deps.onSaved?.(path)
+					deps.onSaved?.(path, {
+						previousContent: document.content,
+						content,
+					})
 				} finally {
 					pendingWrites.delete(id)
 				}

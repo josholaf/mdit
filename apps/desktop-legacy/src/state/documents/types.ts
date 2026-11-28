@@ -85,7 +85,10 @@ export type DocumentWorkspaceDependencies = {
 	writeDocument: (input: DocumentWriteInput) => Promise<DocumentWriteResult>
 	renameDocument: (input: DocumentRenameInput) => Promise<DocumentRenameResult>
 	isRenameBlocked?: (oldPath: string, newPath: string) => boolean
-	onSaved?: (path: string) => void
+	onSaved?: (
+		path: string,
+		change: { previousContent: string; content: string },
+	) => void
 	onRenamed?: (oldPath: string, newPath: string) => void | Promise<void>
 	reportSaveError: (error: unknown) => void
 	getWorkspacePath: () => string | null
