@@ -158,6 +158,11 @@ describe("workspace settings", () => {
 
 	it("counts words separated by whitespace", () => {
 		expect(countWords("")).toBe(0)
-		expect(countWords("  # Title\n\nsome  words here ")).toBe(5)
+		expect(countWords("  # Title\n\nsome  words here ")).toBe(4)
+		expect(countWords("- one\n- two\n\n---\n\n> three")).toBe(3)
+		expect(countWords("---\ntags: [a, b]\n---\nBody text")).toBe(
+			countWords("---\ntags:\n  - a\n  - b\n---\nBody text"),
+		)
+		expect(countWords("---\ntitle: x\n---\nBody text")).toBe(2)
 	})
 })

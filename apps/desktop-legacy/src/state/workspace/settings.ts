@@ -198,8 +198,14 @@ export function todayKey(date = new Date()): string {
 	return `${y}-${m}-${d}`
 }
 
+const FRONTMATTER =
+	/^\uFEFF?---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/
+const WORD_CHARACTER = /[\p{L}\p{N}]/u
+
+/** Counts body words; ignores frontmatter and pure Markdown syntax tokens. */
 export function countWords(text: string): number {
-	const trimmed = text.trim()
-	if (!trimmed) return 0
-	return trimmed.split(/\s+/).filter((w) => w.length > 0).length
+	return text
+		.replace(FRONTMATTER, "")
+		.split(/\s+/)
+		.filter((token) => WORD_CHARACTER.test(token)).length
 }
