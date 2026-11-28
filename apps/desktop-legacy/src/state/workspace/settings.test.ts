@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest"
 import {
 	createWorkspaceSettingsRepository,
 	readDirectorySettings,
+	readEntryIconSettings,
 	readOpenedFileSettings,
+	storeEntryIconSettings,
 } from "./settings"
 
 describe("workspace settings", () => {
@@ -102,5 +104,30 @@ describe("workspace settings", () => {
 			settings.saveSettings("/vault", { pinnedDirectories: ["notes"] }),
 		).rejects.toThrow(error)
 		expect(writeTextFile).not.toHaveBeenCalled()
+	})
+
+	it("round-trips entry icons as workspace-relative paths", () => {
+		const icons = readEntryIconSettings("/vault", {
+			".": "home",
+			"notes/a.md": "star",
+			"/vault/inbox": "inbox",
+			"../outside.md": "skull",
+			"empty.md": " ",
+			"bad.md": 3,
+			" spaced.md": "rocket",
+		})
+		expect(icons).toEqual({
+			"/vault": "home",
+			"/vault/notes/a.md": "star",
+			"/vault/inbox": "inbox",
+			"/vault/ spaced.md": "rocket",
+		})
+		expect(storeEntryIconSettings("/vault", icons)).toEqual({
+			".": "home",
+			"notes/a.md": "star",
+			" spaced.md": "rocket",
+			inbox: "inbox",
+		})
+		expect(readEntryIconSettings("/vault", ["notes"])).toEqual({})
 	})
 })

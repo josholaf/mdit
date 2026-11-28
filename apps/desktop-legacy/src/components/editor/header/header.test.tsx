@@ -30,6 +30,10 @@ vi.mock("./history-navigation", () => ({
 	HistoryNavigation: () => <div data-testid="history-navigation" />,
 }))
 
+vi.mock("./breadcrumbs", () => ({
+	Breadcrumbs: () => <div data-testid="breadcrumbs" />,
+}))
+
 vi.mock("./info-button", () => ({
 	InfoButton: () => <div data-testid="info-button" />,
 }))

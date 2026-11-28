@@ -117,6 +117,38 @@ export function readDirectorySettings(
 	]
 }
 
+export function readEntryIconSettings(
+	workspacePath: string,
+	icons: unknown,
+): Record<string, string> {
+	if (!icons || typeof icons !== "object" || Array.isArray(icons)) {
+		return {}
+	}
+	const result: Record<string, string> = {}
+	for (const [path, icon] of Object.entries(icons)) {
+		if (typeof icon !== "string" || !icon.trim() || !path.trim()) {
+			continue
+		}
+		const absolute = resolve(workspacePath, normalizePathSeparators(path))
+		if (isPathEqualOrDescendant(absolute, workspacePath)) {
+			result[absolute] = icon.trim()
+		}
+	}
+	return result
+}
+
+export function storeEntryIconSettings(
+	workspacePath: string,
+	icons: Record<string, string>,
+): Record<string, string> {
+	return Object.fromEntries(
+		Object.entries(icons).map(([path, icon]) => [
+			relative(workspacePath, path) || ".",
+			icon,
+		]),
+	)
+}
+
 export function storeDirectorySettings(
 	workspacePath: string,
 	paths: string[],

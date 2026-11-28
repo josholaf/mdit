@@ -19,7 +19,9 @@ import {
 import { readWorkspaceEntriesFromPath } from "./filesystem"
 import {
 	readDirectorySettings,
+	readEntryIconSettings,
 	storeDirectorySettings,
+	storeEntryIconSettings,
 	type WorkspaceSettingsRepository,
 } from "./settings"
 import type {
@@ -29,6 +31,12 @@ import type {
 	WorkspaceState,
 } from "./types"
 import type { WorkspaceWatchDependencies } from "./watch-types"
+
+type DirectoryUi = Pick<
+	WorkspaceState,
+	"expandedDirectories" | "pinnedDirectories"
+> &
+	Partial<Pick<WorkspaceState, "entryIcons">>
 
 type EntryCreated = {
 	parentPath: string
@@ -47,6 +55,17 @@ const remapOptionalPath = (
 	oldPath: string,
 	newPath: string,
 ) => (path === null ? null : remapPath(path, oldPath, newPath))
+
+const areEntryIconsEqual = (
+	previous: Record<string, string>,
+	next: Record<string, string>,
+) => {
+	const keys = Object.keys(next)
+	return (
+		keys.length === Object.keys(previous).length &&
+		keys.every((key) => previous[key] === next[key])
+	)
+}
 
 const collectDirectories = (entries: WorkspaceEntry[], paths: Set<string>) => {
 	for (const entry of entries) {
@@ -104,8 +123,8 @@ export function createWorkspaceTreeProjection({
 
 	const persistDirectoryUi = async (
 		workspacePath: string,
-		previous: Pick<WorkspaceState, "expandedDirectories" | "pinnedDirectories">,
-		next: Pick<WorkspaceState, "expandedDirectories" | "pinnedDirectories">,
+		previous: DirectoryUi,
+		next: DirectoryUi,
 	) => {
 		const patch: Partial<WorkspaceSettings> = {}
 		if (
@@ -126,6 +145,13 @@ export function createWorkspaceTreeProjection({
 				workspacePath,
 				next.pinnedDirectories,
 			)
+		}
+		if (
+			previous.entryIcons &&
+			next.entryIcons &&
+			!areEntryIconsEqual(previous.entryIcons, next.entryIcons)
+		) {
+			patch.entryIcons = storeEntryIconSettings(workspacePath, next.entryIcons)
 		}
 		if (Object.keys(patch).length > 0) {
 			try {
@@ -155,6 +181,10 @@ export function createWorkspaceTreeProjection({
 						workspacePath,
 						loadedSettings.pinnedDirectories,
 					),
+					entryIcons: readEntryIconSettings(
+						workspacePath,
+						loadedSettings.entryIcons,
+					),
 				}
 			: previous
 		const validDirectories = new Set<string>()
@@ -169,6 +199,7 @@ export function createWorkspaceTreeProjection({
 					path === normalizePathSeparators(workspacePath) ||
 					validDirectories.has(path),
 			),
+			entryIcons: storedDirectories.entryIcons,
 		}
 		state.update(next)
 		await persistDirectoryUi(workspacePath, storedDirectories, next)
@@ -280,6 +311,9 @@ export function createWorkspaceTreeProjection({
 			entries: removeEntriesFromState(previous.entries, paths),
 			expandedDirectories: previous.expandedDirectories.filter(keep),
 			pinnedDirectories: previous.pinnedDirectories.filter(keep),
+			entryIcons: Object.fromEntries(
+				Object.entries(previous.entryIcons).filter(([path]) => keep(path)),
+			),
 			selectedEntryPaths: new Set(
 				[...previous.selectedEntryPaths].filter(keep),
 			),
@@ -318,6 +352,12 @@ export function createWorkspaceTreeProjection({
 				...new Set(previous.expandedDirectories.map(remap)),
 			],
 			pinnedDirectories: [...new Set(previous.pinnedDirectories.map(remap))],
+			entryIcons: Object.fromEntries(
+				Object.entries(previous.entryIcons).map(([path, icon]) => [
+					remap(path),
+					icon,
+				]),
+			),
 			selectedEntryPaths: new Set([...previous.selectedEntryPaths].map(remap)),
 			selectionAnchorPath: remapOptionalPath(
 				previous.selectionAnchorPath,

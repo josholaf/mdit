@@ -1,10 +1,12 @@
 import { cn } from "@mdit/ui/lib/utils"
+import { normalizePathSeparators } from "@mdit/utils/path-utils"
 import { isMac } from "@mdit/utils/platform"
-import { XIcon } from "lucide-react"
+import { FileTextIcon, XIcon } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import { type MouseEvent, useCallback, useMemo } from "react"
 import { useShallow } from "zustand/shallow"
-import { useDesktopRuntime, useDocumentState } from "@/state"
+import { EntryIcon } from "@/components/icon-picker/entry-icon"
+import { useDesktopRuntime, useDocumentState, useWorkspaceState } from "@/state"
 
 export function TabStrip() {
 	const { rawTabs, openDocuments, activeTabId } = useDocumentState(
@@ -14,6 +16,7 @@ export function TabStrip() {
 			activeTabId: s.activeTabId,
 		})),
 	)
+	const entryIcons = useWorkspaceState((s) => s.entryIcons)
 	const { activateTabById, closeTabById } =
 		useDesktopRuntime().documents.commands
 	const tabs = useMemo(() => {
@@ -118,7 +121,12 @@ export function TabStrip() {
 								},
 							}}
 						>
-							<div className="flex-1 truncate text-left pl-2 pr-1">
+							<EntryIcon
+								icon={entryIcons[normalizePathSeparators(tab.path)]}
+								fallback={FileTextIcon}
+								className="ml-2 size-3.5 text-foreground/60"
+							/>
+							<div className="flex-1 truncate text-left pl-1.5 pr-1">
 								{tab.name}
 							</div>
 							<div

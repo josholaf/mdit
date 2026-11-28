@@ -74,6 +74,7 @@ const buildState = (
 	expandedDirectories: [],
 	isMigrationsComplete: !workspacePath,
 	pinnedDirectories: [],
+	entryIcons: {},
 	aiLockedEntryPaths: new Set(),
 	selectedEntryPaths: new Set(),
 	selectionAnchorPath: null,

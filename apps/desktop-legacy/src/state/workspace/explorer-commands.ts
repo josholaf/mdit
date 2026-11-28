@@ -90,6 +90,31 @@ export function createWorkspaceExplorerCommands({
 		}
 	}
 
+	const setEntryIcon = async (path: string, icon: string | null) => {
+		const previous = getSnapshot()
+		const { workspacePath, entryIcons } = previous
+		if (!workspacePath) {
+			return
+		}
+		const normalized = normalizePathSeparators(path)
+		if ((entryIcons[normalized] ?? null) === icon) {
+			return
+		}
+		const nextIcons = { ...entryIcons }
+		if (icon) {
+			nextIcons[normalized] = icon
+		} else {
+			delete nextIcons[normalized]
+		}
+		const next = {
+			expandedDirectories: previous.expandedDirectories,
+			pinnedDirectories: previous.pinnedDirectories,
+			entryIcons: nextIcons,
+		}
+		state.update({ entryIcons: nextIcons })
+		await persistDirectoryUi(workspacePath, previous, next)
+	}
+
 	const setCurrentCollectionPath = (
 		value: string | null | ((previous: string | null) => string | null),
 	) => {
@@ -128,6 +153,7 @@ export function createWorkspaceExplorerCommands({
 					: [...expandedDirectories, path],
 			)
 		},
+		setEntryIcon,
 		pinDirectory: (path: string) => updatePinnedDirectories(path, true),
 		unpinDirectory: (path: string) => updatePinnedDirectories(path, false),
 		setCurrentCollectionPath,

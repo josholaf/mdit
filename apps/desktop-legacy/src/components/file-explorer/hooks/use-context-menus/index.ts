@@ -28,7 +28,7 @@ export const useFileExplorerMenus = ({
 	pinDirectory,
 	unpinDirectory,
 }: UseFileExplorerMenusProps) => {
-	const openImageEdit = useDesktopRuntime().window.commands.openImageEdit
+	const { openImageEdit, openIconPicker } = useDesktopRuntime().window.commands
 	const copyEntry = useDesktopRuntime().workspace.commands.copyEntry
 	const openTabInNewTab = useDesktopRuntime().documents.commands.openTabInNewTab
 
@@ -47,6 +47,7 @@ export const useFileExplorerMenus = ({
 				hasLockedPathConflict,
 				lookupEntryByPath,
 				openImageEdit,
+				openIconPicker,
 				workspacePath,
 			})
 		},
@@ -61,6 +62,7 @@ export const useFileExplorerMenus = ({
 			openTabInNewTab,
 			lookupEntryByPath,
 			openImageEdit,
+			openIconPicker,
 			workspacePath,
 		],
 	)
@@ -75,6 +77,7 @@ export const useFileExplorerMenus = ({
 				createNote,
 				handleDeleteEntries,
 				hasLockedPathConflict,
+				openIconPicker,
 				workspacePath,
 				pinnedDirectories,
 				pinDirectory,
@@ -88,6 +91,7 @@ export const useFileExplorerMenus = ({
 			createNote,
 			handleDeleteEntries,
 			hasLockedPathConflict,
+			openIconPicker,
 			workspacePath,
 			pinnedDirectories,
 			pinDirectory,

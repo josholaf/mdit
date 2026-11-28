@@ -22,6 +22,7 @@ export type WorkspaceState = {
 	expandedDirectories: string[]
 	isMigrationsComplete: boolean
 	pinnedDirectories: string[]
+	entryIcons: Record<string, string>
 	aiLockedEntryPaths: Set<string>
 	selectedEntryPaths: Set<string>
 	selectionAnchorPath: string | null
@@ -36,6 +37,7 @@ export type WorkspaceSettings = {
 		autoSync: boolean
 	}
 	pinnedDirectories?: string[]
+	entryIcons?: Record<string, string>
 	lastOpenedFilePaths?: string[]
 	expandedDirectories?: string[]
 }
