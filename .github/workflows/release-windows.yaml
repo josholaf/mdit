@@ -35,7 +35,7 @@ jobs:
           from pathlib import Path
 
           def version_tuple(value):
-              if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", value):
+              if not re.fullmatch(r"(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)", value):
                   raise SystemExit("Version must be MAJOR.MINOR.PATCH without a v prefix")
               return tuple(map(int, value.split(".")))
 
@@ -48,13 +48,11 @@ jobs:
               raise SystemExit(f"{requested} must be newer than the latest release {previous}")
           print(f"Validated Windows release version {requested}")
           PY
-      - name: Install Node.js and pnpm
+      - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "24"
       - uses: pnpm/action-setup@v4
-        with:
-          version: "12.18.0"
       - name: Run desktop frontend checks
         run: |
           pnpm install --frozen-lockfile
@@ -71,8 +69,6 @@ jobs:
         with:
           node-version: "24"
       - uses: pnpm/action-setup@v4
-        with:
-          version: "12.18.0"
       - uses: dtolnay/rust-toolchain@stable
       - uses: swatinem/rust-cache@v2
         with:
@@ -88,7 +84,7 @@ jobs:
         run: |
           pnpm exec tauri build \
             --config src-tauri/tauri.windows.conf.json \
-            --config "{\"version\":\"$RELEASE_VERSION\"}" \
+            --config "{\\"version\\":\\"$RELEASE_VERSION\\"}" \
             --bundles nsis,msi --no-sign
       - name: Collect installers
         shell: pwsh
