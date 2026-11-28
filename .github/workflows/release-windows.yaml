@@ -1,0 +1,131 @@
+name: Release Windows (Legacy Tauri)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (MAJOR.MINOR.PATCH; must be newer than the current app version)"
+        required: true
+        default: "0.8.5"
+        type: string
+
+concurrency:
+  group: mdit-windows-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate release version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          previous=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
+            --jq '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))] | first | .tagName // ""')
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          def version_tuple(value):
+              if not re.fullmatch(r"(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)", value):
+                  raise SystemExit("Version must be MAJOR.MINOR.PATCH without a v prefix")
+              return tuple(map(int, value.split(".")))
+
+          requested = os.environ["RELEASE_VERSION"]
+          current = json.loads(Path("apps/desktop-legacy/src-tauri/tauri.conf.json").read_text())["version"]
+          previous = os.environ.get("PREVIOUS_RELEASE", "")
+          if version_tuple(requested) <= version_tuple(current):
+              raise SystemExit(f"{requested} must be newer than the app version {current}")
+          if previous and version_tuple(requested) <= version_tuple(previous.removeprefix("v")):
+              raise SystemExit(f"{requested} must be newer than the latest release {previous}")
+          PY
+        env:
+          PREVIOUS_RELEASE: ${{ steps.previous.outputs.tag }}
+      - name: Run desktop frontend checks
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.18.0 --activate
+          pnpm install --frozen-lockfile
+          pnpm --dir apps/desktop-legacy ci
+
+  build-windows:
+    needs: validate
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "12.18.0"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+          key: windows-legacy-release
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+        shell: bash
+      - name: Build Windows installers
+        working-directory: apps/desktop-legacy
+        shell: bash
+        run: |
+          pnpm exec tauri build \
+            --config src-tauri/tauri.windows.conf.json \
+            --config "{\\"version\\":\\"$RELEASE_VERSION\\"}" \
+            --bundles nsis,msi --no-sign
+      - name: Collect installers
+        shell: pwsh
+        run: |
+          $bundleRoot = "apps/desktop-legacy/src-tauri/target/release/bundle"
+          $files = Get-ChildItem -Path $bundleRoot -Recurse -File | Where-Object {
+            $_.Extension -in @(".exe", ".msi")
+          }
+          if (-not $files -or $files.Count -lt 2) {
+            throw "Expected both NSIS (.exe) and MSI installers under $bundleRoot"
+          }
+          New-Item -ItemType Directory -Force -Path "release-assets" | Out-Null
+          $files | Copy-Item -Destination "release-assets"
+          Get-ChildItem "release-assets"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mdit-windows-x64
+          path: release-assets/*
+          if-no-files-found: error
+          retention-days: 14
+
+  draft-release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mdit-windows-x64
+          path: release-assets
+      - name: Create draft Windows release
+        run: |
+          gh release create "v$RELEASE_VERSION" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+            --title "Mdit $RELEASE_VERSION for Windows" \
+            --notes "Windows desktop release built from the existing Tauri desktop app. Includes NSIS (.exe) and MSI installers. These installers are currently unsigned; Windows SmartScreen may display a warning. This release does not contain the newer macOS-only GPUI app."
