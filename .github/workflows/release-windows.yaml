@@ -27,7 +27,7 @@ jobs:
           RELEASE_VERSION: ${{ inputs.version }}
         run: |
           previous=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
-            --jq '[.[] | select(.tagName | test("^v[0-9]+\.[0-9]+\.[0-9]+$"))] | first | .tagName // ""')
+            --jq '[.[] | select(.tagName | test("^v[0-9]+[.][0-9]+[.][0-9]+$"))] | first | .tagName // ""')
           PREVIOUS_RELEASE="$previous" python3 - <<'PY'
           import json
           import os
