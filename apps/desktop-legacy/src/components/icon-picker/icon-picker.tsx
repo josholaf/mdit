@@ -50,6 +50,9 @@ export function IconPicker({ value, onSelect, inputRef }: IconPickerProps) {
 			ArrowDown: COLUMNS,
 			ArrowUp: -COLUMNS,
 		}
+		if (event.nativeEvent.isComposing) {
+			return
+		}
 		if (event.key in deltas) {
 			event.preventDefault()
 			moveActive(deltas[event.key])
