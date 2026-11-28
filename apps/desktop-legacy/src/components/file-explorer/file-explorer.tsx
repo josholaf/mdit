@@ -25,6 +25,7 @@ import { useEnterToRename } from "./hooks/use-enter-to-rename"
 import { useEntryPrimaryAction } from "./hooks/use-entry-primary-action"
 import { useFolderDropZone } from "./hooks/use-folder-drop-zone"
 import { RootNewFolderInput, TreeNode } from "./tree"
+import { ExplorerToolbar } from "./ui/explorer-toolbar"
 import { GitSyncStatus } from "./ui/git-sync-status"
 import { PinnedList } from "./ui/pinned-list"
 import { SettingsMenu } from "./ui/settings-menu"
@@ -250,7 +251,11 @@ export function FileExplorer() {
 	const createNoteAndScroll = useCallback(
 		async (
 			directoryPath: string,
-			options?: { initialName?: string; initialContent?: string },
+			options?: {
+				initialName?: string
+				initialContent?: string
+				openTab?: boolean
+			},
 		) => {
 			const newEntryPath = await createNote(directoryPath, options)
 			ensureDirectoryExpanded(directoryPath)
@@ -346,6 +351,24 @@ export function FileExplorer() {
 						/>
 						<GitSyncStatus />
 					</div>
+					<ExplorerToolbar
+						workspacePath={workspacePath}
+						activeTabPath={activeTabPath}
+						expandedDirectories={expandedDirectories}
+						onNewNote={() => {
+							if (workspacePath) {
+								void createNoteAndScroll(workspacePath, { openTab: true })
+							}
+						}}
+						onNewFolder={() => {
+							if (workspacePath) {
+								beginNewFolder(workspacePath)
+							}
+						}}
+						setExpandedDirectories={(paths) => {
+							void setExpandedDirectories(paths)
+						}}
+					/>
 					<div
 						className="flex flex-1 min-h-0 flex-col"
 						onPointerDownCapture={handleExplorerPointerDownCapture}

@@ -34,6 +34,7 @@ export function createWindowState(
 		isUpdateDownloading: false,
 		imagePreviewPath: null as string | null,
 		imageEditPath: null as string | null,
+		iconPickerPath: null as string | null,
 		fontScale: preferences.getFontScale(),
 		chatPanelBetaEnabled: preferences.getChatPanelBetaEnabled(),
 		isChatPanelOpen: false,
@@ -107,6 +108,8 @@ export function createWindowState(
 			closeImagePreview: () => state.update({ imagePreviewPath: null }),
 			openImageEdit: (path: string) => state.update({ imageEditPath: path }),
 			closeImageEdit: () => state.update({ imageEditPath: null }),
+			openIconPicker: (path: string) => state.update({ iconPickerPath: path }),
+			closeIconPicker: () => state.update({ iconPickerPath: null }),
 			setFontScale: (updater: FontScaleUpdater) => {
 				const value =
 					typeof updater === "function"
